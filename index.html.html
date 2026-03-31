@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Afraid to Lose You — by rikixz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Lora:ital,wght@0,300;0,400;1,300;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fdfaf7;
+    --bg2: #f7f2ec;
+    --rose: #c0526e;
+    --rose-light: #f2c4cf;
+    --rose-pale: rgba(192,82,110,0.08);
+    --blush: #e8a0b0;
+    --gold: #b8874a;
+    --gold-light: rgba(184,135,74,0.12);
+    --sage: #8a9e8c;
+    --cream: #f9f4ee;
+    --ink: #2a1f28;
+    --ink2: #4a3f48;
+    --muted: #9a8e96;
+    --border: rgba(192,82,110,0.15);
+    --shadow: rgba(42,31,40,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink2);
+    font-family: 'Lora', Georgia, serif;
+    font-size: 17px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Soft paper texture */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.6;
+  }
+
+  /* Soft ambient blushes */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 55% 45% at 90% 5%, rgba(192,82,110,0.06) 0%, transparent 65%),
+      radial-gradient(ellipse 40% 50% at 5% 90%, rgba(184,135,74,0.05) 0%, transparent 65%),
+      radial-gradient(ellipse 35% 35% at 50% 50%, rgba(232,160,176,0.03) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── MUSIC PLAYER ── */
+  #bg-audio {
+    display: none;
+  }
+
+  .music-bar {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(253,250,247,0.92);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 10px 18px 10px 14px;
+    box-shadow: 0 4px 24px var(--shadow), 0 0 0 1px rgba(192,82,110,0.08);
+    cursor: pointer;
+    transition: box-shadow 0.3s, transform 0.2s;
+    user-select: none;
+  }
+  .music-bar:hover { box-shadow: 0 6px 32px rgba(192,82,110,0.15); transform: translateY(-1px); }
+
+  .music-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--rose), var(--blush));
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+  .music-bar:hover .music-icon { transform: scale(1.08); }
+  .music-icon svg { width: 14px; height: 14px; fill: white; }
+
+  .music-info { display: flex; flex-direction: column; gap: 1px; }
+  .music-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px; letter-spacing: 0.08em;
+    color: var(--ink); font-weight: 400;
+    white-space: nowrap;
+  }
+  .music-status {
+    font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--rose); opacity: 0.8;
+  }
+
+  /* Bars animation */
+  .bars { display: flex; align-items: flex-end; gap: 2px; height: 14px; margin-left: 4px; }
+  .bar {
+    width: 2px; border-radius: 1px;
+    background: var(--rose);
+    opacity: 0.6;
+    animation: barBounce 0.8s ease-in-out infinite alternate;
+  }
+  .bar:nth-child(1) { height: 6px;  animation-delay: 0s; }
+  .bar:nth-child(2) { height: 12px; animation-delay: 0.15s; }
+  .bar:nth-child(3) { height: 8px;  animation-delay: 0.05s; }
+  .bar:nth-child(4) { height: 14px; animation-delay: 0.2s; }
+  .bar:nth-child(5) { height: 5px;  animation-delay: 0.1s; }
+  .bars.paused .bar { animation-play-state: paused; }
+
+  @keyframes barBounce {
+    from { transform: scaleY(0.3); }
+    to   { transform: scaleY(1); }
+  }
+
+  /* ── PAGE ── */
+  .page {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 32px 100px;
+    position: relative; z-index: 2;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0;
+    min-height: 100vh;
+    align-items: center;
+    padding: 70px 0 50px;
+    opacity: 0;
+    animation: fadeUp 1.3s cubic-bezier(0.22,1,0.36,1) 0.3s forwards;
+  }
+
+  .hero-text { padding-right: 44px; }
+
+  .eyebrow {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 10px; letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--rose); margin-bottom: 26px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before {
+    content: ''; width: 30px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--rose-light));
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 5vw, 3.8rem);
+    font-weight: 600; line-height: 1.06;
+    color: var(--ink); letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+  h1 em { font-style: italic; color: var(--rose); font-weight: 400; }
+
+  .tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic; font-size: 1.05rem;
+    color: var(--muted); line-height: 1.65;
+    max-width: 300px;
+  }
+
+  .meta { margin-top: 34px; display: flex; align-items: center; gap: 10px; }
+  .pill {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--rose); padding: 5px 14px;
+    border: 1px solid var(--rose-light);
+    background: var(--rose-pale);
+  }
+  .mdot { width: 3px; height: 3px; border-radius: 50%; background: var(--rose-light); }
+
+  /* GIF */
+  .gif-panel { position: relative; flex-shrink: 0; }
+
+  .gif-aura {
+    position: absolute; inset: -24px;
+    background: radial-gradient(ellipse, rgba(192,82,110,0.12) 0%, transparent 65%);
+    filter: blur(16px);
+    pointer-events: none; z-index: 0;
+    animation: auraPulse 5s ease-in-out infinite;
+  }
+  @keyframes auraPulse {
+    0%,100% { opacity: 0.5; transform: scale(0.97); }
+    50%      { opacity: 1;   transform: scale(1.03); }
+  }
+
+  .gif-frame {
+    position: relative; z-index: 1;
+    overflow: hidden; border-radius: 4px;
+    box-shadow:
+      0 0 0 1px rgba(192,82,110,0.12),
+      0 12px 60px rgba(42,31,40,0.12),
+      0 2px 8px rgba(192,82,110,0.08);
+  }
+  .gif-frame iframe { display: block; }
+
+  .gif-frame::before, .gif-frame::after {
+    content: ''; position: absolute;
+    width: 14px; height: 14px;
+    border-color: var(--rose-light); border-style: solid;
+    z-index: 3; pointer-events: none; opacity: 0.7;
+  }
+  .gif-frame::before { top: 7px; left: 7px; border-width: 1px 0 0 1px; }
+  .gif-frame::after  { bottom: 7px; right: 7px; border-width: 0 1px 1px 0; }
+
+  /* ── DIVIDERS ── */
+  .div {
+    display: flex; align-items: center; gap: 14px;
+    margin: 56px 0 52px;
+    opacity: 0; animation: fadeUp 0.8s ease 1.3s forwards;
+  }
+  .dl { flex: 1; height: 1px; }
+  .dl.l { background: linear-gradient(90deg, transparent, var(--rose-light)); }
+  .dl.r { background: linear-gradient(90deg, var(--rose-light), transparent); }
+  .ds {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; color: var(--rose); opacity: 0.5; line-height: 1;
+  }
+
+  .div-mid {
+    display: flex; align-items: center; gap: 14px;
+    margin: 46px 0; opacity: 0.3;
+  }
+  .div-mid .dl.l { background: linear-gradient(90deg, transparent, var(--rose-light)); }
+  .div-mid .dl.r { background: linear-gradient(90deg, var(--rose-light), transparent); }
+  .div-mid .ds { font-family: 'Playfair Display', serif; font-size: 13px; color: var(--rose); opacity: 0.6; line-height:1; }
+
+  /* ── BODY ── */
+  .body-content {
+    opacity: 0; animation: fadeUp 1s ease 1.5s forwards;
+  }
+
+  .lead-line {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-size: 1.35rem; line-height: 1.7;
+    color: var(--ink); margin-bottom: 40px;
+    padding-left: 22px;
+    border-left: 2px solid var(--rose-light);
+  }
+
+  p {
+    font-size: 1.04rem; line-height: 2;
+    color: var(--ink2); margin-bottom: 26px; font-weight: 300;
+  }
+  p em  { color: var(--rose); font-style: italic; font-family: 'Playfair Display', serif; }
+  p strong { font-weight: 500; color: var(--ink); }
+
+  .sec {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 9px; letter-spacing: 0.45em; text-transform: uppercase;
+    color: var(--rose); opacity: 0.55;
+    margin: 52px 0 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sec::after { content: ''; flex: 1; height: 1px; background: var(--rose-light); opacity: 0.5; }
+
+  .quote-block {
+    margin: 50px 0;
+    padding: 32px 38px 32px 34px;
+    background: linear-gradient(135deg, rgba(192,82,110,0.04), rgba(184,135,74,0.03));
+    border-left: 2px solid var(--rose-light);
+    border-top: 1px solid rgba(192,82,110,0.08);
+    border-bottom: 1px solid rgba(192,82,110,0.08);
+    position: relative;
+  }
+  .quote-block::before {
+    content: '\201C';
+    font-family: 'Playfair Display', serif; font-size: 110px;
+    color: rgba(192,82,110,0.07);
+    position: absolute; top: -18px; left: 10px;
+    line-height: 1; pointer-events: none;
+  }
+  .quote-block p {
+    font-family: 'Playfair Display', serif; font-style: italic;
+    font-size: 1.22rem; line-height: 1.72;
+    color: var(--ink); margin: 0;
+  }
+
+  /* Closing */
+  .closing {
+    margin-top: 64px; padding-top: 36px;
+    border-top: 1px solid rgba(192,82,110,0.12);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 14px;
+  }
+  .by {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px; letter-spacing: 0.1em; color: var(--muted);
+  }
+  .by span { color: var(--rose); font-style: italic; }
+
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase;
+    padding: 4px 11px;
+    border: 1px solid rgba(192,82,110,0.18);
+    color: var(--muted); background: var(--rose-pale);
+    transition: all 0.25s; cursor: default;
+  }
+  .tag:hover { border-color: var(--rose); color: var(--rose); background: rgba(192,82,110,0.06); }
+
+  /* Footer */
+  .foot {
+    text-align: center; padding: 60px 0 44px;
+    opacity: 0; animation: fadeUp 0.8s ease 1.8s forwards;
+  }
+  .foot-inner {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--muted); opacity: 0.4;
+  }
+  .heart { color: var(--rose); font-size: 13px; animation: hb 2.8s ease-in-out infinite; }
+  @keyframes hb {
+    0%,100% { transform: scale(1); opacity: 0.5; }
+    30%     { transform: scale(1.3); opacity: 1; }
+    50%     { transform: scale(1); }
+    65%     { transform: scale(1.12); opacity: 0.8; }
+  }
+
+  /* Petals */
+  .petals { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .petal {
+    position: absolute; opacity: 0;
+    animation: petalFall linear infinite;
+    border-radius: 60% 40% 60% 40%;
+  }
+  @keyframes petalFall {
+    0%   { opacity: 0; transform: translateY(-5vh) rotate(0deg) scale(0.5); }
+    5%   { opacity: 0.4; }
+    95%  { opacity: 0.1; }
+    100% { opacity: 0; transform: translateY(108vh) rotate(720deg) scale(1); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 580px) {
+    .hero { grid-template-columns: 1fr; min-height: auto; padding: 55px 0 36px; }
+    .hero-text { padding-right: 0; margin-bottom: 40px; }
+    .gif-panel { justify-self: center; }
+    h1 { font-size: 2.6rem; }
+    .music-bar { bottom: 16px; right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hidden Audio Player -->
+<audio id="bg-audio" src="music.mp3" loop></audio>
+
+<!-- Music bar -->
+<div class="music-bar" id="musicBar" onclick="toggleMusic()">
+  <div class="music-icon" id="musicIcon">
+    <svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg>
+  </div>
+  <div class="music-info">
+    <span class="music-title">Background Music</span>
+    <span class="music-status" id="musicStatus">Loading...</span>
+  </div>
+  <div class="bars" id="bars">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
+</div>
+
+<!-- Floating petals -->
+<div class="petals" id="petals"></div>
+
+<div class="page">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-text">
+      <div class="eyebrow">Personal Essay</div>
+      <h1><em>Afraid</em><br>to Lose You</h1>
+      <p class="tagline">The silent kind of love — the kind that lives between the lines, unnamed and aching.</p>
+      <div class="meta">
+        <span class="pill">by rikixz</span>
+        <span class="mdot"></span>
+        <span class="pill">2025</span>
+      </div>
+    </div>
+
+    <div class="gif-panel">
+      <div class="gif-aura"></div>
+      <div class="gif-frame">
+        <iframe src="https://giphy.com/embed/r5W7wEZpqxhhiFa98F" width="220" height="390" frameBorder="0" allowFullScreen></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIVIDER -->
+  <div class="div">
+    <div class="dl l"></div>
+    <div class="ds">✦</div>
+    <div class="dl r"></div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body-content">
+
+    <p class="lead-line">
+      It started as friendship — and that was the most dangerous part.
+    </p>
+
+    <p>
+      They were never supposed to be anything more. Just two people who found each other at the right time, laughing too easily, staying up too late. It felt safe because it was <em>unnamed</em>. And unnamed things have no rules to break.
+    </p>
+
+    <p>
+      But somewhere between the shared silences and the texts that came without reason, something quietly shifted. Not in a single moment — not the way movies promise. It was slower than that. <strong>Softer. More dangerous.</strong> Feelings grew like ivy on old brick — patient, invisible, until suddenly they covered everything.
+    </p>
+
+    <div class="sec">The Crossing</div>
+
+    <p>
+      There's a line between friends and something more. Neither of them said the words when they crossed it. Maybe they didn't notice. Maybe they chose not to. But the crossing happened — in every glance that lasted a beat too long, in every inside joke that became its own private world, in every quiet moment one of them thought: <em>I would do anything not to lose this.</em>
+    </p>
+
+    <div class="quote-block">
+      <p>The fear isn't losing a lover. It's losing the friend who somehow became the person you build your ordinary days around — without ever meaning to.</p>
+    </div>
+
+    <div class="sec">The Weight of Silence</div>
+
+    <p>
+      And that's the cruelest part. You love someone who was never <em>yours</em> to lose. There's no breakup to explain the grief. No title to justify the ache. You are just a friend — at least on paper — carrying feelings that have no proper name and no safe place to land.
+    </p>
+
+    <p>
+      Every moment feels fragile now. You choose your words carefully. You laugh a little too hard at their jokes. You notice things you shouldn't — the way they tilt their head, the specific way they say your name. And you say nothing, because saying something might shatter the only thing you have left: <strong>proximity.</strong>
+    </p>
+
+    <p>
+      Loving someone silently is its own kind of exhaustion. Caring too much, holding it all in — watching them live their life while you stand just close enough to feel the warmth, but never quite inside it. Beautiful and terrible at the same time, the way only real things can be.
+    </p>
+
+    <div class="div-mid">
+      <div class="dl l"></div>
+      <div class="ds" style="font-size:13px; opacity:0.5;">❧</div>
+      <div class="dl r"></div>
+    </div>
+
+    <p>
+      So you stay. You stay as a friend, as the constant, as the one who always shows up. Because the alternative — losing them entirely — is unthinkable. And maybe that's its own kind of love: choosing someone's presence over your own confession. <em>Choosing them, even in silence.</em>
+    </p>
+
+    <p>
+      They'll never know how much they mean. Or maybe someday they will. But for now, you hold it the way you hold your breath underwater — careful, tight, hoping you surface before you run out.
+    </p>
+
+    <p>
+      This one is for everyone who loves someone who was never truly theirs — and yet, somehow, <strong>always was. ;)</strong>
+    </p>
+
+    <div class="closing">
+      <span class="by">Written by <span>rikixz</span></span>
+      <div class="tags">
+        <span class="tag">Friendship</span>
+        <span class="tag">Feelings</span>
+        <span class="tag">Silent Love</span>
+        <span class="tag">Heartache</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="foot">
+  <div class="foot-inner">
+    <span class="heart">♥</span>
+    <span>rikixz · Afraid to Lose You</span>
+    <span class="heart">♥</span>
+  </div>
+</div>
+
+<script>
+  // ── PETALS ──
+  const petalWrap = document.getElementById('petals');
+  const petalColors = [
+    'rgba(192,82,110,0.18)', 'rgba(232,160,176,0.22)',
+    'rgba(242,196,207,0.25)', 'rgba(184,135,74,0.12)',
+    'rgba(192,82,110,0.1)'
+  ];
+  for (let i = 0; i < 16; i++) {
+    const el = document.createElement('div');
+    el.className = 'petal';
+    const size = Math.random() * 9 + 5;
+    el.style.cssText = `
+      width:${size}px; height:${size * 0.7}px;
+      left:${Math.random() * 100}%;
+      background:${petalColors[Math.floor(Math.random() * petalColors.length)]};
+      animation-duration:${Math.random() * 18 + 12}s;
+      animation-delay:${Math.random() * 20}s;
+    `;
+    petalWrap.appendChild(el);
+  }
+
+  // ── MUSIC ──
+  const audio = document.getElementById('bg-audio');
+  let isPlaying = false;
+  const statusEl = document.getElementById('musicStatus');
+  const barsEl = document.getElementById('bars');
+  const playIconEl = document.getElementById('playIcon');
+  const pauseIconSVG = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  const playIconSVG  = '<path d="M8 5v14l11-7z"/>';
+
+  // Initialize UI state
+  statusEl.textContent = 'Ready (Click to Play)';
+  barsEl.classList.add('paused');
+
+  function setPlaying(state) {
+    isPlaying = state;
+    statusEl.textContent = state ? 'Now Playing' : 'Ready (Click to Play)';
+    playIconEl.innerHTML = state ? pauseIconSVG : playIconSVG;
+    barsEl.classList.toggle('paused', !state);
+  }
+
+  // Listen to audio events to keep UI in sync
+  audio.addEventListener('play', () => setPlaying(true));
+  audio.addEventListener('pause', () => setPlaying(false));
+  audio.addEventListener('ended', () => setPlaying(false));
+
+  // Play/Pause button logic
+  function toggleMusic() {
+    if (audio.paused) {
+      audio.play().catch(err => console.error("Audio playback failed:", err));
+    } else {
+      audio.pause();
+    }
+  }
+
+  // Start music on the user's VERY FIRST click anywhere on the page
+  document.body.addEventListener('click', function initAudio(e) {
+    if (audio.paused && !isPlaying) {
+        // Prevent double-firing if they clicked the play button directly
+        if (!e.target.closest('#musicBar')) {
+            audio.play().catch(err => console.error("Audio play blocked by browser:", err));
+        }
+    }
+  }, { once: true });
+</script>
+
+</body>
+</html>
